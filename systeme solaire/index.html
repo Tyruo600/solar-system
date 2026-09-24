@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Système Solaire 3D en Direct (Live) - Planètes & Tous Astéroïdes Connus</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Conteneur 3D WebGL Three.js -->
+    <div id="canvas-container"></div>
+
+    <!-- Interface HUD Superposée -->
+    <div class="hud-layer">
+        
+        <!-- En-tête : Titre, Statut Live & Recherche NASA JPL -->
+        <header class="hud-header">
+            <div class="brand-section interactive">
+                <div class="brand-title">
+                    <span class="logo-icon">🪐</span> SYSTÈME SOLAIRE 3D LIVE
+                </div>
+                <div class="brand-subtitle">Éphémérides Képlériennes en Temps Réel & Base NASA JPL</div>
+                <div id="live-indicator" class="status-badge active">
+                    <span class="pulse"></span> DIRECT LIVE UTC
+                </div>
+
+                <!-- Navigation rapide vers les planètes -->
+                <nav id="quick-nav-planets" class="quick-nav-bar"></nav>
+            </div>
+
+            <!-- Barre de recherche connectée au JPL -->
+            <div class="search-container interactive">
+                <div class="search-box">
+                    <input 
+                        type="text" 
+                        id="search-input" 
+                        class="search-input" 
+                        placeholder="Chercher planète, astéroïde (ex: Apophis, 2024 YR4, Cérès, 99942)..."
+                        autocomplete="off"
+                    >
+                    <button id="search-btn" class="search-btn" title="Rechercher sur la base NASA JPL">
+                        <span>🔍 NASA JPL</span>
+                    </button>
+                </div>
+                <div id="search-loading" class="search-loading hidden">
+                    <div class="spinner"></div>
+                    <span>Interrogation de la base NASA JPL Small-Body Database...</span>
+                </div>
+                <div id="search-suggestions" class="suggestions-dropdown hidden"></div>
+            </div>
+        </header>
+
+        <!-- Filtres des Ceintures d'Astéroïdes & Options -->
+        <aside class="filters-panel interactive">
+            <div class="filters-title">Astéroïdes & Petits Corps</div>
+            <label class="filter-row">
+                <input type="checkbox" id="chk-main-belt" checked>
+                <span>Ceinture Principale (~22 000)</span>
+            </label>
+            <label class="filter-row">
+                <input type="checkbox" id="chk-trojans" checked>
+                <span>Troyens de Jupiter L4/L5 (~4 000)</span>
+            </label>
+            <label class="filter-row">
+                <input type="checkbox" id="chk-neas" checked>
+                <span style="color: #ff5252;">Géocroiseurs NEAs (~3 000)</span>
+            </label>
+            <label class="filter-row">
+                <input type="checkbox" id="chk-kuiper" checked>
+                <span>Ceinture de Kuiper (~8 000)</span>
+            </label>
+            <div style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px;">
+                <label class="filter-row">
+                    <input type="checkbox" id="chk-orbits" checked>
+                    <span>Tracer les orbites képlériennes</span>
+                </label>
+            </div>
+            <div style="margin-top: 8px; display: flex; gap: 6px;">
+                <button id="btn-event-apophis" class="ctrl-btn" style="flex: 1; font-size: 0.72rem; padding: 5px 8px; border-color: #ff3366; color: #ff3366;">
+                    🎯 Survol Apophis 2029
+                </button>
+                <button id="btn-reset-cam" class="ctrl-btn" style="font-size: 0.72rem; padding: 5px 8px;" title="Recentrer la vue">
+                    ⟲ Vue globale
+                </button>
+            </div>
+        </aside>
+
+        <!-- Panneau Télémétrique & Fiche Scientifique de l'astre sélectionné -->
+        <section id="inspector-panel" class="inspector-card interactive">
+            <div class="inspector-header">
+                <h1 id="inspector-title" class="inspector-title">Terre</h1>
+                <div id="inspector-subtitle" class="inspector-subtitle" style="color: #2b82c9;">Planète Tellurique</div>
+            </div>
+
+            <p id="inspector-description" class="inspector-desc">
+                Notre berceau, la seule planète connue abritant la vie.
+            </p>
+
+            <div class="telemetry-grid">
+                <div class="telemetry-item">
+                    <div class="telemetry-label">Distance au Soleil</div>
+                    <div id="telemetry-dist-sun" class="telemetry-value">1.000 UA</div>
+                </div>
+                <div class="telemetry-item">
+                    <div class="telemetry-label">Vitesse orbitale</div>
+                    <div id="telemetry-velocity" class="telemetry-value">29.78 km/s</div>
+                </div>
+                <div class="telemetry-item">
+                    <div class="telemetry-label">Période de révolution</div>
+                    <div id="telemetry-period" class="telemetry-value">365.25 j</div>
+                </div>
+                <div class="telemetry-item">
+                    <div class="telemetry-label">Rayon moyen</div>
+                    <div id="telemetry-radius" class="telemetry-value">6 371 km</div>
+                </div>
+                <div class="telemetry-item">
+                    <div class="telemetry-label">Période de rotation</div>
+                    <div id="telemetry-rotation" class="telemetry-value">23.9 h</div>
+                </div>
+                <div class="telemetry-item">
+                    <div class="telemetry-label">Masse</div>
+                    <div id="telemetry-mass" class="telemetry-value">5.97 × 10²⁴ kg</div>
+                </div>
+                <div class="telemetry-item full-width">
+                    <div class="telemetry-label">Coordonnées Héliocentriques Écliptiques (UA)</div>
+                    <div id="telemetry-coords" class="telemetry-value" style="font-size: 0.76rem;">X: 0.00 | Y: 0.00 | Z: 0.00</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Barre Inférieure de Contrôle du Temps (Mission Control) -->
+        <footer class="hud-footer">
+            <div class="time-control-dock interactive">
+                <div class="clock-display">
+                    <div id="utc-clock" class="utc-text">--:--:-- UTC</div>
+                    <div id="jd-clock" class="jd-text">JD 2451545.0000</div>
+                </div>
+
+                <button id="btn-live" class="ctrl-btn btn-live active" title="Revenir au temps présent réel">
+                    🔴 DIRECT (LIVE)
+                </button>
+
+                <button id="btn-play-pause" class="ctrl-btn" title="Lecture / Pause">
+                    ⏸ Pause
+                </button>
+
+                <button id="btn-step-back" class="ctrl-btn" title="Reculer d'un jour">
+                    ⏮ -1j
+                </button>
+
+                <button id="btn-step-forward" class="ctrl-btn" title="Avancer d'un jour">
+                    +1j ⏭
+                </button>
+
+                <select id="speed-select" class="speed-select" title="Multiplicateur temporel">
+                    <option value="1">Vitesse : 1x (Temps Réel)</option>
+                    <option value="60">Vitesse : 1 min/s</option>
+                    <option value="3600">Vitesse : 1 heure/s</option>
+                    <option value="86400" selected>Vitesse : 1 jour/s</option>
+                    <option value="604800">Vitesse : 1 semaine/s</option>
+                    <option value="2592000">Vitesse : 1 mois/s</option>
+                    <option value="31536000">Vitesse : 1 an/s</option>
+                </select>
+
+                <input type="datetime-local" id="date-picker" class="date-input" title="Choisir une date de simulation">
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Bibliothèques 3D & Moteur Universel (Compatibles http:// et file://) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+    <script src="bundle.js"></script>
+</body>
+</html>
